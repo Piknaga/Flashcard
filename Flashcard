@@ -1,0 +1,1409 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Pik Vocabulary Flashcards - made by Nong Pik</title>
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Prompt', 'Inter', 'sans-serif'],
+          }
+        }
+      }
+    }
+  </script>
+  
+  <!-- Google Font: Prompt & Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700;800;900&family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+  
+  <!-- React 18, ReactDOM & Babel Standalone CDNs -->
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+  <style>
+    body { 
+      font-family: 'Prompt', 'Inter', sans-serif; 
+      -webkit-tap-highlight-color: transparent;
+    }
+    .perspective-1000 { perspective: 1000px; }
+    .transform-style-3d { transform-style: preserve-3d; }
+    .backface-hidden { backface-visibility: hidden; -webkit-backface-visibility: hidden; }
+    .rotate-y-180 { transform: rotateY(180deg); }
+    
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      20%, 60% { transform: translateX(-8px); }
+      40%, 80% { transform: translateX(8px); }
+    }
+    .animate-shake { animation: shake 0.4s ease-in-out; }
+    
+    @keyframes pop {
+      0% { transform: scale(0.95); opacity: 0; }
+      100% { transform: scale(1); opacity: 1; }
+    }
+    .animate-pop { animation: pop 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 9999px; }
+    .dark ::-webkit-scrollbar-thumb { background: #334155; }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-800 dark:bg-slate-900 dark:text-slate-100 min-h-screen transition-colors duration-200">
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const { useState, useEffect, useRef, useMemo } = React;
+
+    // SVG Icon Component Library (Pure inline components)
+    const IconSparkles = ({ className = "w-5 h-5" }) => (
+      <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"/></svg>
+    );
+    const IconBook = ({ className = "w-5 h-5" }) => (
+      <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
+    );
+    const IconBarChart = ({ className = "w-5 h-5" }) => (
+      <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+    );
+    const IconTrophy = ({ className = "w-5 h-5" }) => (
+      <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"/></svg>
+    );
+    const IconFlame = ({ className = "w-5 h-5" }) => (
+      <svg className={className} fill="currentColor" viewBox="0 0 24 24"><path d="M12 23c6.075 0 11-4.925 11-11 0-4.14-2.29-7.75-5.69-9.66a1 1 0 00-1.37.48c-.28.61-.44 1.29-.44 2 0 2.21-1.79 4-4 4s-4-1.79-4-4c0-.71-.16-1.39-.44-2a1 1 0 00-1.37-.48C2.29 4.25 0 7.86 0 12c0 6.075 4.925 11 11 11z"/></svg>
+    );
+    const IconSettings = ({ className = "w-5 h-5" }) => (
+      <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><circle cx="12" cy="12" r="3" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2"/></svg>
+    );
+    const IconSun = ({ className = "w-5 h-5" }) => (
+      <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
+    );
+    const IconMoon = ({ className = "w-5 h-5" }) => (
+      <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/></svg>
+    );
+    const IconPlus = ({ className = "w-5 h-5" }) => (
+      <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4"/></svg>
+    );
+    const IconEdit = ({ className = "w-5 h-5" }) => (
+      <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+    );
+    const IconTrash = ({ className = "w-5 h-5" }) => (
+      <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+    );
+    const IconVolume = ({ className = "w-5 h-5" }) => (
+      <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z"/></svg>
+    );
+    const IconArrowLeft = ({ className = "w-5 h-5" }) => (
+      <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
+    );
+    const IconArrowRight = ({ className = "w-5 h-5" }) => (
+      <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
+    );
+    const IconRotateCw = ({ className = "w-5 h-5" }) => (
+      <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+    );
+    const IconHeart = ({ className = "w-5 h-5" }) => (
+      <svg className={className} fill="currentColor" viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+    );
+    const IconX = ({ className = "w-5 h-5" }) => (
+      <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"/></svg>
+    );
+    const IconCheckCircle = ({ className = "w-5 h-5" }) => (
+      <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+    );
+    const IconLayers = ({ className = "w-5 h-5" }) => (
+      <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>
+    );
+    const IconGamepad = ({ className = "w-5 h-5" }) => (
+      <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 002 2h14a2 2 0 002-2V7a2 2 0 00-2-2H5z"/></svg>
+    );
+    const IconZap = ({ className = "w-5 h-5" }) => (
+      <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+    );
+    const IconAlertTriangle = ({ className = "w-5 h-5" }) => (
+      <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+    );
+    const IconRefreshCw = ({ className = "w-5 h-5" }) => (
+      <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+    );
+
+    // Audio & Speech Utility Functions
+    const playAudioFX = (type, enabled = true) => {
+      if (!enabled) return;
+      try {
+        const AudioCtx = window.AudioContext || window.webkitAudioContext;
+        if (!AudioCtx) return;
+        const ctx = new AudioCtx();
+        if (ctx.state === 'suspended') ctx.resume();
+        const now = ctx.currentTime;
+
+        if (type === 'correct') {
+          const osc1 = ctx.createOscillator();
+          const osc2 = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc1.type = 'sine'; osc2.type = 'sine';
+          osc1.frequency.setValueAtTime(523.25, now);
+          osc1.frequency.exponentialRampToValueAtTime(659.25, now + 0.08);
+          osc1.frequency.exponentialRampToValueAtTime(783.99, now + 0.16);
+          osc2.frequency.setValueAtTime(1046.50, now + 0.12);
+          gain.gain.setValueAtTime(0.15, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.3);
+          osc1.connect(gain); osc2.connect(gain); gain.connect(ctx.destination);
+          osc1.start(now); osc2.start(now + 0.08);
+          osc1.stop(now + 0.3); osc2.stop(now + 0.3);
+        } else if (type === 'wrong') {
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.type = 'sawtooth';
+          osc.frequency.setValueAtTime(190, now);
+          osc.frequency.setValueAtTime(130, now + 0.1);
+          gain.gain.setValueAtTime(0.18, now);
+          gain.gain.exponentialRampToValueAtTime(0.01, now + 0.25);
+          osc.connect(gain); gain.connect(ctx.destination);
+          osc.start(now); osc.stop(now + 0.25);
+        } else if (type === 'flip' || type === 'click') {
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(350, now);
+          osc.frequency.exponentialRampToValueAtTime(180, now + 0.04);
+          gain.gain.setValueAtTime(0.08, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.04);
+          osc.connect(gain); gain.connect(ctx.destination);
+          osc.start(now); osc.stop(now + 0.04);
+        } else if (type === 'timeout') {
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.type = 'square';
+          osc.frequency.setValueAtTime(220, now);
+          osc.frequency.setValueAtTime(160, now + 0.12);
+          gain.gain.setValueAtTime(0.12, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.25);
+          osc.connect(gain); gain.connect(ctx.destination);
+          osc.start(now); osc.stop(now + 0.25);
+        } else if (type === 'victory') {
+          [523.25, 659.25, 783.99, 1046.50].forEach((freq, i) => {
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.type = 'triangle'; osc.frequency.value = freq;
+            gain.gain.setValueAtTime(0.12, now + i * 0.08);
+            gain.gain.exponentialRampToValueAtTime(0.001, now + i * 0.08 + 0.25);
+            osc.connect(gain); gain.connect(ctx.destination);
+            osc.start(now + i * 0.08); osc.stop(now + i * 0.08 + 0.25);
+          });
+        }
+      } catch (e) {
+        console.error("Audio synth error", e);
+      }
+    };
+
+    const speakText = (text) => {
+      if (!('speechSynthesis' in window)) return;
+      window.speechSynthesis.cancel();
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.lang = 'en-US';
+      utterance.rate = 0.88;
+      window.speechSynthesis.speak(utterance);
+    };
+
+    // Default Vocabularies
+    const DEFAULT_SETS = [
+      {
+        id: 'set-business-1',
+        name: 'Business English',
+        description: 'Essential terminology for corporate communications, meetings, and strategy.',
+        category: 'Business',
+        createdAt: new Date().toISOString(),
+        lastPracticed: new Date().toISOString(),
+        words: [
+          { id: 'bw1', word: 'Agile', meaning: 'คล่องตัว / ปรับตัวได้เร็ว', pronunciation: 'แอ-ไจล์', example: 'Our team uses an agile workflow to handle quick changes.', note: 'Tech & Mgmt' },
+          { id: 'bw2', word: 'Synergy', meaning: 'การประสานพลัง / การทำงานร่วมกัน', pronunciation: 'ซิน-เนอร์-จี', example: 'The merger created strong synergy between sales teams.', note: 'Cooperation' },
+          { id: 'bw3', word: 'Benchmark', meaning: 'เกณฑ์มาตรฐานเปรียบเทียบ', pronunciation: 'เบนช์-มาร์ก', example: 'This product sets the quality benchmark for the industry.', note: 'Standard' },
+          { id: 'bw4', word: 'Leverage', meaning: 'ใช้ประโยชน์สูงสุด / พลังงัด', pronunciation: 'เลฟ-เวอ-เรจ', example: 'We should leverage customer feedback to improve design.', note: 'Verb/Noun' },
+          { id: 'bw5', word: 'Feasible', meaning: 'เป็นไปได้จริง / สมเหตุสมผล', pronunciation: 'ฟี-ซะ-เบิล', example: 'The proposal is economically feasible for next quarter.', note: 'Practical' },
+          { id: 'bw6', word: 'Revenue', meaning: 'รายได้รวมขององค์กร', pronunciation: 'เรฟ-เวอ-นิว', example: 'Annual revenue increased by 18% this fiscal year.', note: 'Income' },
+          { id: 'bw7', word: 'Mitigate', meaning: 'บรรเทา / ลดความเสี่ยง', pronunciation: 'มิท-ทิ-เกต', example: 'Proactive steps were taken to mitigate potential risks.', note: 'Reduce risk' },
+          { id: 'bw8', word: 'Stakeholder', meaning: 'ผู้มีส่วนได้ส่วนเสีย', pronunciation: 'สเตก-โฮล-เดอร์', example: 'We need alignment from all key stakeholders.', note: 'Corporate' }
+        ]
+      },
+      {
+        id: 'set-daily-2',
+        name: 'Daily Conversation',
+        description: 'High-utility words and natural expressions for everyday fluent English.',
+        category: 'General',
+        createdAt: new Date().toISOString(),
+        lastPracticed: null,
+        words: [
+          { id: 'dw1', word: 'Spontaneous', meaning: 'เกิดขึ้นเอง / ไม่ได้วางแผนไว้ก่อน', pronunciation: 'สปอน-เท-เนียส', example: 'We took a spontaneous weekend trip to the beach.', note: 'Natural' },
+          { id: 'dw2', word: 'Empathy', meaning: 'ความเข้าใจความรู้สึกผู้อื่น', pronunciation: 'เอ็ม-พะ-ธี', example: 'Empathy helps build deeper and lasting friendships.', note: 'Emotion' },
+          { id: 'dw3', word: 'Ambitious', meaning: 'ทะเยอทะยาน / มุ่งมั่นสูง', pronunciation: 'แอม-บิ-เชียส', example: 'She set ambitious goals for her future software startup.', note: 'Mindset' },
+          { id: 'dw4', word: 'Resilient', meaning: 'ฟื้นตัวได้เร็ว / ล้มแล้วลุกไว', pronunciation: 'รี-ซิล-เลียนท์', example: 'Children are surprisingly resilient in challenging times.', note: 'Trait' },
+          { id: 'dw5', word: 'Hesitate', meaning: 'ลังเล / ชะงัก', pronunciation: 'เฮส-ซิ-เทต', example: 'Don\'t hesitate to contact us if you have questions.', note: 'Action' },
+          { id: 'dw6', word: 'Optimistic', meaning: 'มองโลกในแง่ดี', pronunciation: 'ออพ-ทิ-มิส-ทิก', example: 'He remains optimistic despite recent setbacks.', note: 'Positive' },
+          { id: 'dw7', word: 'Punctual', meaning: 'ตรงต่อเวลา', pronunciation: 'พังค์-ชวล', example: 'Being punctual builds professional trust.', note: 'Time' },
+          { id: 'dw8', word: 'Bizarre', meaning: 'แปลกประหลาด / พิสดาร', pronunciation: 'บิ-ซาร์', example: 'That was a bizarre experience I will never forget.', note: 'Strange' }
+        ]
+      },
+      {
+        id: 'set-academic-3',
+        name: 'Academic & Exam Prep',
+        description: 'Vocabulary for academic writing, IELTS, TOEFL, and TOEIC prep.',
+        category: 'Exam Prep',
+        createdAt: new Date().toISOString(),
+        lastPracticed: null,
+        words: [
+          { id: 'aw1', word: 'Ambiguous', meaning: 'คลุมเครือ / มีหลายความหมาย', pronunciation: 'แอม-บิ-กิว-แอส', example: 'The study results were ambiguous without further data.', note: 'Unclear' },
+          { id: 'aw2', word: 'Coherent', meaning: 'เชื่อมโยงกันเป็นระบบ / เข้าใจง่าย', pronunciation: 'โค-ฮี-เรนต์', example: 'She presented a clear and coherent argument.', note: 'Logical' },
+          { id: 'aw3', word: 'Eradicate', meaning: 'กำจัดสิ้นซาก / ถอนรากถอนโคน', pronunciation: 'อิ-แรด-ดิ-เกต', example: 'Vaccines helped eradicate many deadly diseases.', note: 'Destroy' },
+          { id: 'aw4', word: 'Hypothesis', meaning: 'สมมติฐาน', pronunciation: 'ไฮ-พอธ-ทะ-ซิส', example: 'The researchers tested their hypothesis thoroughly.', note: 'Science' },
+          { id: 'aw5', word: 'Inevitable', meaning: 'หลีกเลี่ยงไม่ได้', pronunciation: 'อิน-เอฟ-วิ-ทะ-เบิล', example: 'Digital transformation is inevitable for modern firms.', note: 'Certain' },
+          { id: 'aw6', word: 'Substantial', meaning: 'มากมาย / มีสาระสำคัญ', pronunciation: 'ซับ-สแตน-เชียล', example: 'They made substantial progress in renewable energy.', note: 'Significant' },
+          { id: 'aw7', word: 'Plausible', meaning: 'น่าเชื่อถือ / เป็นไปได้', pronunciation: 'พลอส-ซิ-เบิล', example: 'Her explanation sounded entirely plausible.', note: 'Reasonable' },
+          { id: 'aw8', word: 'Meticulous', meaning: 'พิถีพิถัน / ละเอียดลออ', pronunciation: 'เมอ-ทิ-คิว-ลัส', example: 'He was meticulous about maintaining experimental logs.', note: 'Careful' }
+        ]
+      }
+    ];
+
+    const INITIAL_ACHIEVEMENTS = [
+      { id: 'first_game', title: 'First Steps 🏆', desc: 'เล่นเกมหรือฝึกทบทวนครั้งแรก', icon: '🏆', unlocked: false, progress: 0, target: 1 },
+      { id: 'streak_5', title: 'On Fire! 🔥', desc: 'ทำ Streak ตอบถูกต่อเนื่องครบ 5 ข้อ', icon: '🔥', unlocked: false, progress: 0, target: 5 },
+      { id: 'vocab_100', title: 'Vocabulary Collector 📚', desc: 'สะสมคำศัพท์ในระบบครบ 20 คำขึ้นไป', icon: '📚', unlocked: false, progress: 0, target: 20 },
+      { id: 'accuracy_90', title: 'Sharpshooter 🎯', desc: 'ทำ Accuracy สูงสุดเกิน 90% ในเกม', icon: '🎯', unlocked: false, progress: 0, target: 90 },
+      { id: 'scholar', title: 'Dedicated Scholar 🧠', desc: 'เล่นจบการเรียนรู้ครบ 5 เซสชัน', icon: '🧠', unlocked: false, progress: 0, target: 5 }
+    ];
+
+    function App() {
+      const [currentView, setCurrentView] = useState('home');
+      const [activeSetId, setActiveSetId] = useState(null);
+
+      const [sets, setSets] = useState(() => {
+        const saved = localStorage.getItem('pik_vocab_sets');
+        return saved ? JSON.parse(saved) : DEFAULT_SETS;
+      });
+
+      const [settings, setSettings] = useState(() => {
+        const saved = localStorage.getItem('pik_vocab_settings');
+        return saved ? JSON.parse(saved) : {
+          darkMode: false,
+          soundEnabled: true,
+          livesEnabled: true,
+          timerDuration: 10,
+          autoNext: true,
+          shuffleWords: true,
+          questionCount: 10
+        };
+      });
+
+      const [userStats, setUserStats] = useState(() => {
+        const saved = localStorage.getItem('pik_vocab_stats');
+        return saved ? JSON.parse(saved) : {
+          totalGames: 0,
+          totalQuestions: 0,
+          totalCorrect: 0,
+          totalWrong: 0,
+          totalStudyTimeSeconds: 0,
+          currentStreak: 0,
+          bestStreak: 0,
+          history: [],
+          wordMastery: {}
+        };
+      });
+
+      const [achievements, setAchievements] = useState(() => {
+        const saved = localStorage.getItem('pik_vocab_achievements');
+        return saved ? JSON.parse(saved) : INITIAL_ACHIEVEMENTS;
+      });
+
+      // Modals State
+      const [isCreateSetModalOpen, setIsCreateSetModalOpen] = useState(false);
+      const [isEditWordModalOpen, setIsEditWordModalOpen] = useState(false);
+      const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
+      const [isResetConfirmModalOpen, setIsResetConfirmModalOpen] = useState(false);
+
+      const [wordFormData, setWordFormData] = useState({ id: '', word: '', meaning: '', pronunciation: '', example: '', note: '' });
+      const [setFormData, setSetFormData] = useState({ id: '', name: '', description: '', category: 'General' });
+
+      const [sessionData, setSessionData] = useState({
+        mode: 'quiz',
+        setName: '',
+        words: [],
+        currentIndex: 0,
+        score: 0,
+        correctCount: 0,
+        wrongCount: 0,
+        currentStreak: 0,
+        bestStreak: 0,
+        lives: 3,
+        startTime: null,
+        missedWords: []
+      });
+
+      useEffect(() => {
+        if (settings.darkMode) {
+          document.documentElement.classList.add('dark');
+        } else {
+          document.documentElement.classList.remove('dark');
+        }
+      }, [settings.darkMode]);
+
+      useEffect(() => { localStorage.setItem('pik_vocab_sets', JSON.stringify(sets)); }, [sets]);
+      useEffect(() => { localStorage.setItem('pik_vocab_settings', JSON.stringify(settings)); }, [settings]);
+      useEffect(() => { localStorage.setItem('pik_vocab_stats', JSON.stringify(userStats)); }, [userStats]);
+      useEffect(() => { localStorage.setItem('pik_vocab_achievements', JSON.stringify(achievements)); }, [achievements]);
+
+      const activeSet = useMemo(() => sets.find(s => s.id === activeSetId) || sets[0] || null, [sets, activeSetId]);
+      const totalWordsInApp = useMemo(() => sets.reduce((acc, s) => acc + (s.words ? s.words.length : 0), 0), [sets]);
+
+      const startLearningMode = (mode, customWordsList = null, setOverride = null) => {
+        playAudioFX('click', settings.soundEnabled);
+        const targetSet = setOverride || activeSet;
+        let sourceWords = customWordsList || (targetSet ? [...targetSet.words] : []);
+
+        if (sourceWords.length === 0) {
+          alert("ชุดคำศัพท์นี้ยังไม่มีคำศัพท์ กรุณาเพิ่มคำศัพท์ก่อนเริ่มเล่นครับ");
+          return;
+        }
+
+        if (settings.shuffleWords) {
+          sourceWords = [...sourceWords].sort(() => Math.random() - 0.5);
+        }
+
+        if (mode === 'quiz' && sourceWords.length > settings.questionCount) {
+          sourceWords = sourceWords.slice(0, settings.questionCount);
+        }
+
+        setSessionData({
+          mode,
+          setName: targetSet ? targetSet.name : 'Custom Practice',
+          words: sourceWords,
+          currentIndex: 0,
+          score: 0,
+          correctCount: 0,
+          wrongCount: 0,
+          currentStreak: 0,
+          bestStreak: 0,
+          lives: settings.livesEnabled ? 3 : 999,
+          startTime: Date.now(),
+          missedWords: []
+        });
+
+        if (targetSet) {
+          setSets(prev => prev.map(s => s.id === targetSet.id ? { ...s, lastPracticed: new Date().toISOString() } : s));
+        }
+
+        setCurrentView(mode);
+      };
+
+      const finishSession = (finalSession) => {
+        const elapsedSeconds = Math.max(1, Math.round((Date.now() - finalSession.startTime) / 1000));
+        const totalQ = finalSession.correctCount + finalSession.wrongCount;
+        const accuracyPct = totalQ > 0 ? Math.round((finalSession.correctCount / totalQ) * 100) : 0;
+
+        const newStats = {
+          ...userStats,
+          totalGames: userStats.totalGames + 1,
+          totalQuestions: userStats.totalQuestions + totalQ,
+          totalCorrect: userStats.totalCorrect + finalSession.correctCount,
+          totalWrong: userStats.totalWrong + finalSession.wrongCount,
+          totalStudyTimeSeconds: userStats.totalStudyTimeSeconds + elapsedSeconds,
+          currentStreak: finalSession.bestStreak > userStats.currentStreak ? finalSession.bestStreak : userStats.currentStreak,
+          bestStreak: Math.max(userStats.bestStreak, finalSession.bestStreak),
+          history: [
+            {
+              date: new Date().toISOString(),
+              score: finalSession.score,
+              accuracy: accuracyPct,
+              mode: finalSession.mode,
+              setName: finalSession.setName,
+              correct: finalSession.correctCount,
+              wrong: finalSession.wrongCount,
+              timeSec: elapsedSeconds
+            },
+            ...userStats.history.slice(0, 19)
+          ]
+        };
+
+        const updatedMastery = { ...userStats.wordMastery };
+        finalSession.words.forEach(word => {
+          const isMissed = finalSession.missedWords.some(m => m.id === word.id);
+          const currentWordStat = updatedMastery[word.id] || { correctCount: 0, wrongCount: 0, lastTested: new Date().toISOString() };
+          if (isMissed) currentWordStat.wrongCount += 1;
+          else currentWordStat.correctCount += 1;
+          currentWordStat.lastTested = new Date().toISOString();
+          updatedMastery[word.id] = currentWordStat;
+        });
+
+        newStats.wordMastery = updatedMastery;
+        setUserStats(newStats);
+
+        setAchievements(prev => prev.map(ach => {
+          let progress = ach.progress;
+          let unlocked = ach.unlocked;
+          if (ach.id === 'first_game') progress = newStats.totalGames;
+          if (ach.id === 'streak_5') progress = newStats.bestStreak;
+          if (ach.id === 'vocab_100') progress = totalWordsInApp;
+          if (ach.id === 'scholar') progress = newStats.totalGames;
+          if (ach.id === 'accuracy_90' && accuracyPct >= 90) unlocked = true;
+          if (progress >= ach.target) unlocked = true;
+          return { ...ach, progress, unlocked };
+        }));
+
+        playAudioFX('victory', settings.soundEnabled);
+        setCurrentView('results');
+      };
+
+      const handleResetAllData = () => {
+        localStorage.clear();
+        setSets(DEFAULT_SETS);
+        setSettings({ darkMode: false, soundEnabled: true, livesEnabled: true, timerDuration: 10, autoNext: true, shuffleWords: true, questionCount: 10 });
+        setUserStats({ totalGames: 0, totalQuestions: 0, totalCorrect: 0, totalWrong: 0, totalStudyTimeSeconds: 0, currentStreak: 0, bestStreak: 0, history: [], wordMastery: {} });
+        setAchievements(INITIAL_ACHIEVEMENTS);
+        setIsResetConfirmModalOpen(false);
+        setIsSettingsModalOpen(false);
+        setCurrentView('home');
+      };
+
+      return (
+        <div className="min-h-screen flex flex-col justify-between">
+          <div>
+            <!-- Main Navbar -->
+            <header className="sticky top-0 z-30 backdrop-blur-md border-b bg-white/90 dark:bg-slate-900/90 border-slate-200 dark:border-slate-800 shadow-sm">
+              <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+                
+                <div 
+                  className="flex items-center space-x-3 cursor-pointer group"
+                  onClick={() => { playAudioFX('click', settings.soundEnabled); setCurrentView('home'); }}
+                >
+                  <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-indigo-600 to-violet-500 flex items-center justify-center text-white shadow-lg shadow-indigo-500/30 group-hover:scale-105 transition-transform">
+                    <IconSparkles />
+                  </div>
+                  <div>
+                    <span className="font-bold text-lg sm:text-xl tracking-tight bg-gradient-to-r from-indigo-600 via-violet-600 to-purple-600 dark:from-indigo-400 dark:to-purple-400 bg-clip-text text-transparent">
+                      Pik Vocabulary Flashcards
+                    </span>
+                  </div>
+                </div>
+
+                <div className="flex items-center space-x-1 sm:space-x-3">
+                  <button
+                    onClick={() => { playAudioFX('click', settings.soundEnabled); setCurrentView('home'); }}
+                    className={`px-3 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all flex items-center space-x-1.5 ${currentView === 'home' ? 'bg-indigo-50 text-indigo-600 dark:bg-slate-800 dark:text-indigo-400' : 'hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300'}`}
+                  >
+                    <IconBook /> <span className="hidden md:inline">Dashboard</span>
+                  </button>
+
+                  <button
+                    onClick={() => { playAudioFX('click', settings.soundEnabled); setCurrentView('stats'); }}
+                    className={`px-3 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all flex items-center space-x-1.5 ${currentView === 'stats' ? 'bg-indigo-50 text-indigo-600 dark:bg-slate-800 dark:text-indigo-400' : 'hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300'}`}
+                  >
+                    <IconBarChart /> <span className="hidden md:inline">Statistics</span>
+                  </button>
+
+                  <button
+                    onClick={() => { playAudioFX('click', settings.soundEnabled); setCurrentView('achievements'); }}
+                    className={`px-3 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all flex items-center space-x-1.5 ${currentView === 'achievements' ? 'bg-indigo-50 text-indigo-600 dark:bg-slate-800 dark:text-indigo-400' : 'hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300'}`}
+                  >
+                    <IconTrophy className="w-4 h-4 text-amber-500" /> <span className="hidden md:inline">Badges</span>
+                  </button>
+
+                  <div className="hidden sm:flex items-center space-x-1 px-3 py-1.5 rounded-full bg-amber-50 dark:bg-amber-950/50 border border-amber-200 dark:border-amber-800 text-amber-700 dark:text-amber-400 font-semibold text-xs">
+                    <IconFlame className="w-4 h-4 text-amber-500" />
+                    <span>🔥 {userStats.currentStreak}</span>
+                  </div>
+
+                  <button
+                    onClick={() => setSettings(prev => ({ ...prev, darkMode: !prev.darkMode }))}
+                    className="p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 transition-colors"
+                  >
+                    {settings.darkMode ? <IconSun className="text-amber-400" /> : <IconMoon />}
+                  </button>
+
+                  <button
+                    onClick={() => setIsSettingsModalOpen(true)}
+                    className="p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 transition-colors"
+                  >
+                    <IconSettings />
+                  </button>
+                </div>
+              </div>
+            </header>
+
+            <!-- Main Content Router -->
+            <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 w-full">
+              {currentView === 'home' && (
+                <HomeView 
+                  sets={sets}
+                  userStats={userStats}
+                  totalWordsInApp={totalWordsInApp}
+                  onSelectSet={(setId) => setActiveSetId(setId)}
+                  onManageSet={(setId) => { setActiveSetId(setId); setCurrentView('manage_set'); }}
+                  onStartMode={(mode, setId) => {
+                    setActiveSetId(setId);
+                    const target = sets.find(s => s.id === setId);
+                    startLearningMode(mode, null, target);
+                  }}
+                  onCreateSet={() => setIsCreateSetModalOpen(true)}
+                  onDeleteSet={(setId) => {
+                    if (confirm("คุณต้องการลบชุดคำศัพท์นี้ใช่หรือไม่?")) {
+                      setSets(prev => prev.filter(s => s.id !== setId));
+                    }
+                  }}
+                  settings={settings}
+                />
+              )}
+
+              {currentView === 'manage_set' && (
+                <ManageSetView 
+                  set={activeSet}
+                  onBack={() => setCurrentView('home')}
+                  onAddWord={() => { setWordFormData({ id: '', word: '', meaning: '', pronunciation: '', example: '', note: '' }); setIsEditWordModalOpen(true); }}
+                  onEditWord={(word) => { setWordFormData(word); setIsEditWordModalOpen(true); }}
+                  onDeleteWord={(wordId) => {
+                    setSets(prev => prev.map(s => s.id === activeSet.id ? { ...s, words: s.words.filter(w => w.id !== wordId) } : s));
+                  }}
+                  onQuickStart={(mode) => startLearningMode(mode)}
+                  settings={settings}
+                />
+              )}
+
+              {currentView === 'flashcard' && (
+                <FlashcardMode session={sessionData} onFinish={finishSession} onBack={() => setCurrentView('home')} settings={settings} />
+              )}
+
+              {currentView === 'matching' && (
+                <MatchingMode session={sessionData} onFinish={finishSession} onBack={() => setCurrentView('home')} settings={settings} />
+              )}
+
+              {currentView === 'quiz' && (
+                <QuizMode session={sessionData} onFinish={finishSession} onBack={() => setCurrentView('home')} settings={settings} />
+              )}
+
+              {currentView === 'results' && (
+                <ResultsView 
+                  session={sessionData}
+                  onPlayAgain={() => startLearningMode(sessionData.mode, sessionData.words)}
+                  onPracticeMistakes={() => {
+                    if (sessionData.missedWords.length === 0) return;
+                    startLearningMode('quiz', sessionData.missedWords);
+                  }}
+                  onHome={() => setCurrentView('home')}
+                  onViewStats={() => setCurrentView('stats')}
+                  settings={settings}
+                />
+              )}
+
+              {currentView === 'stats' && <StatsDashboardView userStats={userStats} sets={sets} settings={settings} />}
+              {currentView === 'achievements' && <AchievementsView achievements={achievements} settings={settings} />}
+            </main>
+          </div>
+
+          <!-- Footer Credit -->
+          <footer className="w-full py-5 border-t border-slate-200 dark:border-slate-800 text-center text-xs font-semibold text-slate-500 dark:text-slate-400 bg-white/50 dark:bg-slate-900/50 backdrop-blur-sm mt-8">
+            <div className="flex items-center justify-center gap-1.5">
+              <span>Pik Vocabulary Flashcards</span>
+              <span>•</span>
+              <span className="text-indigo-600 dark:text-indigo-400 font-bold">made by Nong Pik</span>
+            </div>
+          </footer>
+
+          <!-- Modals -->
+          {isCreateSetModalOpen && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-pop">
+              <div className={`w-full max-w-md rounded-3xl p-6 shadow-2xl border ${settings.darkMode ? 'bg-slate-800 border-slate-700 text-white' : 'bg-white border-slate-200 text-slate-800'}`}>
+                <div className="flex justify-between items-center mb-4">
+                  <h3 className="text-xl font-bold flex items-center gap-2">สร้างชุดคำศัพท์ใหม่</h3>
+                  <button onClick={() => setIsCreateSetModalOpen(false)} className="p-1 rounded-full hover:bg-slate-100 dark:hover:bg-slate-700"><IconX /></button>
+                </div>
+                <form onSubmit={(e) => {
+                  e.preventDefault();
+                  if (!setFormData.name.trim()) return;
+                  const newSet = {
+                    id: 'set-' + Date.now(),
+                    name: setFormData.name,
+                    description: setFormData.description || 'Custom vocabulary set',
+                    category: setFormData.category || 'General',
+                    createdAt: new Date().toISOString(),
+                    lastPracticed: null,
+                    words: []
+                  };
+                  setSets(prev => [newSet, ...prev]);
+                  setActiveSetId(newSet.id);
+                  setIsCreateSetModalOpen(false);
+                  setSetFormData({ id: '', name: '', description: '', category: 'General' });
+                  setCurrentView('manage_set');
+                }} className="space-y-4">
+                  <div>
+                    <label className="block text-xs font-semibold uppercase text-slate-500 mb-1">ชื่อชุดคำศัพท์ *</label>
+                    <input type="text" required placeholder="เช่น คำศัพท์การท่องเที่ยว, TOEIC" value={setFormData.name} onChange={e => setSetFormData({ ...setFormData, name: e.target.value })} className={`w-full px-4 py-2.5 rounded-xl border text-sm outline-none ${settings.darkMode ? 'bg-slate-900 border-slate-700' : 'bg-slate-50 border-slate-200'}`} />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold uppercase text-slate-500 mb-1">หมวดหมู่</label>
+                    <select value={setFormData.category} onChange={e => setSetFormData({ ...setFormData, category: e.target.value })} className={`w-full px-4 py-2.5 rounded-xl border text-sm outline-none ${settings.darkMode ? 'bg-slate-900 border-slate-700' : 'bg-slate-50 border-slate-200'}`}>
+                      <option value="General">General</option>
+                      <option value="Business">Business</option>
+                      <option value="Exam Prep">Exam Prep</option>
+                      <option value="Travel">Travel</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold uppercase text-slate-500 mb-1">คำอธิบาย</label>
+                    <textarea rows={3} placeholder="รายละเอียดสั้นๆ..." value={setFormData.description} onChange={e => setSetFormData({ ...setFormData, description: e.target.value })} className={`w-full px-4 py-2.5 rounded-xl border text-sm outline-none ${settings.darkMode ? 'bg-slate-900 border-slate-700' : 'bg-slate-50 border-slate-200'}`} />
+                  </div>
+                  <div className="flex justify-end gap-3 pt-2">
+                    <button type="button" onClick={() => setIsCreateSetModalOpen(false)} className="px-4 py-2 rounded-xl text-sm font-semibold">ยกเลิก</button>
+                    <button type="submit" className="px-5 py-2 rounded-xl text-sm font-semibold bg-indigo-600 text-white shadow-lg shadow-indigo-500/30">สร้างชุดคำศัพท์</button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          )}
+
+          {isEditWordModalOpen && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-pop">
+              <div className={`w-full max-w-lg rounded-3xl p-6 shadow-2xl border ${settings.darkMode ? 'bg-slate-800 border-slate-700 text-white' : 'bg-white border-slate-200 text-slate-800'}`}>
+                <div className="flex justify-between items-center mb-4">
+                  <h3 className="text-xl font-bold">{wordFormData.id ? 'แก้ไขคำศัพท์' : 'เพิ่มคำศัพท์ใหม่'}</h3>
+                  <button onClick={() => setIsEditWordModalOpen(false)} className="p-1 rounded-full hover:bg-slate-100 dark:hover:bg-slate-700"><IconX /></button>
+                </div>
+                <form onSubmit={(e) => {
+                  e.preventDefault();
+                  if (!wordFormData.word.trim() || !wordFormData.meaning.trim()) return;
+                  if (wordFormData.id) {
+                    setSets(prev => prev.map(s => s.id === activeSet.id ? { ...s, words: s.words.map(w => w.id === wordFormData.id ? wordFormData : w) } : s));
+                  } else {
+                    const newWord = { ...wordFormData, id: 'word-' + Date.now() };
+                    setSets(prev => prev.map(s => s.id === activeSet.id ? { ...s, words: [...s.words, newWord] } : s));
+                  }
+                  setIsEditWordModalOpen(false);
+                }} className="space-y-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-xs font-semibold uppercase text-slate-500 mb-1">English Word *</label>
+                      <input type="text" required placeholder="เช่น Resilient" value={wordFormData.word} onChange={e => setWordFormData({ ...wordFormData, word: e.target.value })} className={`w-full px-3.5 py-2 rounded-xl border text-sm outline-none ${settings.darkMode ? 'bg-slate-900 border-slate-700' : 'bg-slate-50 border-slate-200'}`} />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold uppercase text-slate-500 mb-1">Thai Meaning *</label>
+                      <input type="text" required placeholder="เช่น ฟื้นตัวได้เร็ว" value={wordFormData.meaning} onChange={e => setWordFormData({ ...wordFormData, meaning: e.target.value })} className={`w-full px-3.5 py-2 rounded-xl border text-sm outline-none ${settings.darkMode ? 'bg-slate-900 border-slate-700' : 'bg-slate-50 border-slate-200'}`} />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-xs font-semibold uppercase text-slate-500 mb-1">คำอ่าน (Pronunciation)</label>
+                      <input type="text" placeholder="เช่น รี-ซิล-เลียนท์" value={wordFormData.pronunciation} onChange={e => setWordFormData({ ...wordFormData, pronunciation: e.target.value })} className={`w-full px-3.5 py-2 rounded-xl border text-sm outline-none ${settings.darkMode ? 'bg-slate-900 border-slate-700' : 'bg-slate-50 border-slate-200'}`} />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold uppercase text-slate-500 mb-1">Note / POS</label>
+                      <input type="text" placeholder="เช่น Adjective" value={wordFormData.note} onChange={e => setWordFormData({ ...wordFormData, note: e.target.value })} className={`w-full px-3.5 py-2 rounded-xl border text-sm outline-none ${settings.darkMode ? 'bg-slate-900 border-slate-700' : 'bg-slate-50 border-slate-200'}`} />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold uppercase text-slate-500 mb-1">ประโยคตัวอย่าง (Example)</label>
+                    <textarea rows={2} placeholder="เช่น Children are surprisingly resilient." value={wordFormData.example} onChange={e => setWordFormData({ ...wordFormData, example: e.target.value })} className={`w-full px-3.5 py-2 rounded-xl border text-sm outline-none ${settings.darkMode ? 'bg-slate-900 border-slate-700' : 'bg-slate-50 border-slate-200'}`} />
+                  </div>
+                  <div className="flex justify-end gap-3 pt-2">
+                    <button type="button" onClick={() => setIsEditWordModalOpen(false)} className="px-4 py-2 rounded-xl text-sm font-semibold">ยกเลิก</button>
+                    <button type="submit" className="px-5 py-2 rounded-xl text-sm font-semibold bg-indigo-600 text-white shadow-lg shadow-indigo-500/30">บันทึกคำศัพท์</button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          )}
+
+          {isSettingsModalOpen && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-pop">
+              <div className={`w-full max-w-md rounded-3xl p-6 shadow-2xl border ${settings.darkMode ? 'bg-slate-800 border-slate-700 text-white' : 'bg-white border-slate-200 text-slate-800'}`}>
+                <div className="flex justify-between items-center mb-5">
+                  <h3 className="text-xl font-bold flex items-center gap-2"><IconSettings /> ตั้งค่าแอปพลิเคชัน</h3>
+                  <button onClick={() => setIsSettingsModalOpen(false)} className="p-1 rounded-full hover:bg-slate-100 dark:hover:bg-slate-700"><IconX /></button>
+                </div>
+                <div className="space-y-4 text-sm">
+                  <div className="flex items-center justify-between p-3 rounded-2xl bg-slate-100 dark:bg-slate-900">
+                    <div>
+                      <p className="font-semibold">เสียงเอฟเฟกต์ (Sound FX)</p>
+                      <p className="text-xs text-slate-500">เสียงตอบถูก ตอบผิด หมดเวลา</p>
+                    </div>
+                    <input type="checkbox" checked={settings.soundEnabled} onChange={e => setSettings(s => ({ ...s, soundEnabled: e.target.checked }))} className="w-5 h-5 accent-indigo-600 cursor-pointer" />
+                  </div>
+
+                  <div className="flex items-center justify-between p-3 rounded-2xl bg-slate-100 dark:bg-slate-900">
+                    <div>
+                      <p className="font-semibold">ระบบหัวใจ / ชีวิต (Hearts)</p>
+                      <p className="text-xs text-slate-500">ตอบผิดลดหัวใจ 3 ดวง (❤️❤️❤️)</p>
+                    </div>
+                    <input type="checkbox" checked={settings.livesEnabled} onChange={e => setSettings(s => ({ ...s, livesEnabled: e.target.checked }))} className="w-5 h-5 accent-indigo-600 cursor-pointer" />
+                  </div>
+
+                  <div className="p-3 rounded-2xl bg-slate-100 dark:bg-slate-900 space-y-2">
+                    <div className="flex justify-between font-semibold">
+                      <span>เวลาจับเวลาต่อข้อ (Speed Quiz)</span>
+                      <span className="text-indigo-600 dark:text-indigo-400 font-bold">{settings.timerDuration}s</span>
+                    </div>
+                    <input type="range" min="1" max="20" value={settings.timerDuration} onChange={e => setSettings(s => ({ ...s, timerDuration: Number(e.target.value) }))} className="w-full accent-indigo-600 cursor-pointer" />
+                  </div>
+
+                  <button onClick={() => setIsResetConfirmModalOpen(true)} className="w-full py-2.5 rounded-xl bg-rose-50 text-rose-600 dark:bg-rose-950/40 dark:text-rose-400 font-semibold flex items-center justify-center gap-2 hover:bg-rose-100 transition-colors">
+                    <IconTrash /> รีเซ็ตข้อมูลทั้งหมด
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {isResetConfirmModalOpen && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-pop">
+              <div className={`w-full max-w-sm rounded-3xl p-6 shadow-2xl border text-center ${settings.darkMode ? 'bg-slate-800 border-slate-700 text-white' : 'bg-white border-slate-200 text-slate-800'}`}>
+                <h3 className="text-lg font-bold">รีเซ็ตข้อมูลทั้งหมด?</h3>
+                <p className="text-xs text-slate-500 mt-2">ข้อมูลคำศัพท์ คะแนน และสถิติการเรียนรู้จะถูกลบทั้งหมด</p>
+                <div className="flex gap-3 mt-6">
+                  <button onClick={() => setIsResetConfirmModalOpen(false)} className="flex-1 py-2 rounded-xl border font-semibold text-sm">ยกเลิก</button>
+                  <button onClick={handleResetAllData} className="flex-1 py-2 rounded-xl bg-rose-600 text-white font-semibold text-sm shadow-lg shadow-rose-500/30">ยืนยันรีเซ็ต</button>
+                </div>
+              </div>
+            </div>
+          )}
+
+        </div>
+      );
+    }
+
+    function HomeView({ sets, userStats, totalWordsInApp, onManageSet, onStartMode, onCreateSet, onDeleteSet, settings }) {
+      const [searchTerm, setSearchTerm] = useState('');
+      const [categoryFilter, setCategoryFilter] = useState('All');
+
+      const filteredSets = useMemo(() => {
+        return sets.filter(s => {
+          const mSearch = s.name.toLowerCase().includes(searchTerm.toLowerCase()) || s.description.toLowerCase().includes(searchTerm.toLowerCase());
+          const mCat = categoryFilter === 'All' || s.category === categoryFilter;
+          return mSearch && mCat;
+        });
+      }, [sets, searchTerm, categoryFilter]);
+
+      const overallAccuracy = userStats.totalQuestions > 0 ? Math.round((userStats.totalCorrect / userStats.totalQuestions) * 100) : 0;
+      const studyTimeMins = Math.round(userStats.totalStudyTimeSeconds / 60);
+
+      return (
+        <div className="space-y-8 animate-pop">
+          <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-indigo-600 via-violet-600 to-purple-700 text-white p-6 sm:p-8 shadow-2xl">
+            <div className="relative z-10 space-y-3">
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/20 text-xs font-semibold backdrop-blur-sm">
+                <IconSparkles className="w-3.5 h-3.5 text-amber-300" /> ยินดีต้อนรับสู่ Pik Vocabulary Flashcards 👋
+              </div>
+              <h1 className="text-2xl sm:text-4xl font-extrabold tracking-tight">ฝึกจำคำศัพท์ภาษาอังกฤษแบบได้ผลลัพธ์จริง</h1>
+              <p className="text-indigo-100 text-sm">แฟลชการ์ด 3D, เกมจับคู่, และสปีดควิซพร้อมระบบจับเวลาและสถิติ!</p>
+            </div>
+
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-6 pt-6 border-t border-white/20">
+              <div className="bg-white/10 backdrop-blur-md rounded-2xl p-3.5">
+                <span className="text-xs text-indigo-200 block font-medium">รวมคำศัพท์ทั้งหมด</span>
+                <span className="text-2xl font-black">{totalWordsInApp} คำ</span>
+              </div>
+              <div className="bg-white/10 backdrop-blur-md rounded-2xl p-3.5">
+                <span className="text-xs text-indigo-200 block font-medium">ความแม่นยำรวม</span>
+                <span className="text-2xl font-black">{overallAccuracy}%</span>
+              </div>
+              <div className="bg-white/10 backdrop-blur-md rounded-2xl p-3.5">
+                <span className="text-xs text-indigo-200 block font-medium">เวลาเรียนรู้</span>
+                <span className="text-2xl font-black">{studyTimeMins} นาที</span>
+              </div>
+              <div className="bg-white/10 backdrop-blur-md rounded-2xl p-3.5">
+                <span className="text-xs text-indigo-200 block font-medium">Streak ต่อเนื่อง</span>
+                <span className="text-2xl font-black flex items-center gap-1">🔥 {userStats.currentStreak}</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+            <div>
+              <h2 className="text-2xl font-bold tracking-tight">ชุดคำศัพท์ของคุณ (Vocabulary Sets)</h2>
+              <p className="text-xs text-slate-500">เลือกชุดคำศัพท์เพื่อทบทวนหรือจัดการเพิ่ม/แก้ไขคำศัพท์</p>
+            </div>
+            <button onClick={onCreateSet} className="px-5 py-2.5 rounded-2xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-sm shadow-lg shadow-indigo-500/30 flex items-center gap-2 transition-transform hover:scale-102">
+              <IconPlus /> สร้างชุดคำศัพท์ใหม่
+            </button>
+          </div>
+
+          <div className="flex flex-col sm:flex-row gap-3">
+            <div className="relative flex-1">
+              <input 
+                type="text" 
+                placeholder="ค้นหาชุดคำศัพท์..." 
+                value={searchTerm} 
+                onChange={e => setSearchTerm(e.target.value)} 
+                className={`w-full pl-4 pr-4 py-2.5 rounded-2xl border text-sm outline-none transition-colors ${settings.darkMode ? 'bg-slate-800 border-slate-700 text-white' : 'bg-white border-slate-200'}`}
+              />
+            </div>
+            <div className="flex items-center gap-2 overflow-x-auto pb-1">
+              {['All', 'General', 'Business', 'Exam Prep', 'Travel'].map(cat => (
+                <button 
+                  key={cat} 
+                  onClick={() => setCategoryFilter(cat)}
+                  className={`px-3.5 py-2 rounded-2xl text-xs font-semibold whitespace-nowrap transition-colors ${categoryFilter === cat ? 'bg-indigo-600 text-white shadow-md' : settings.darkMode ? 'bg-slate-800 text-slate-300 hover:bg-slate-700' : 'bg-white text-slate-600 border'}`}
+                >
+                  {cat}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {filteredSets.map(set => (
+              <div key={set.id} className={`rounded-3xl p-6 border transition-all duration-300 hover:shadow-xl flex flex-col justify-between ${settings.darkMode ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-200'}`}>
+                <div>
+                  <div className="flex justify-between items-start mb-2">
+                    <span className="px-3 py-1 rounded-full text-xs font-semibold bg-indigo-50 text-indigo-600 dark:bg-indigo-950 dark:text-indigo-300">{set.category}</span>
+                    <div className="flex items-center space-x-1">
+                      <button onClick={() => onManageSet(set.id)} className="p-1.5 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-500" title="แก้ไขคำศัพท์"><IconEdit /></button>
+                      <button onClick={() => onDeleteSet(set.id)} className="p-1.5 rounded-xl hover:bg-rose-50 text-rose-500" title="ลบชุดคำศัพท์"><IconTrash /></button>
+                    </div>
+                  </div>
+                  <h3 className="font-bold text-lg">{set.name}</h3>
+                  <p className="text-xs text-slate-500 mt-1 line-clamp-2">{set.description}</p>
+                </div>
+
+                <div className="mt-6 pt-4 border-t border-slate-100 dark:border-slate-700 space-y-3">
+                  <div className="text-xs font-semibold text-slate-500">📚 {set.words ? set.words.length : 0} คำศัพท์</div>
+                  <div className="grid grid-cols-3 gap-2">
+                    <button onClick={() => onStartMode('flashcard', set.id)} className="py-2.5 rounded-2xl bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-300 font-semibold text-xs flex flex-col items-center gap-1 transition-colors">
+                      <IconLayers /> <span>แฟลชการ์ด</span>
+                    </button>
+                    <button onClick={() => onStartMode('matching', set.id)} className="py-2.5 rounded-2xl bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-300 font-semibold text-xs flex flex-col items-center gap-1 transition-colors">
+                      <IconGamepad /> <span>จับคู่</span>
+                    </button>
+                    <button onClick={() => onStartMode('quiz', set.id)} className="py-2.5 rounded-2xl bg-amber-50 hover:bg-amber-100 dark:bg-amber-950/60 text-amber-600 dark:text-amber-300 font-semibold text-xs flex flex-col items-center gap-1 transition-colors">
+                      <IconZap /> <span>สปีดควิซ</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      );
+    }
+
+    function ManageSetView({ set, onBack, onAddWord, onEditWord, onDeleteWord, onQuickStart, settings }) {
+      const [searchTerm, setSearchTerm] = useState('');
+      if (!set) return null;
+      const filteredWords = set.words.filter(w => w.word.toLowerCase().includes(searchTerm.toLowerCase()) || w.meaning.toLowerCase().includes(searchTerm.toLowerCase()));
+
+      return (
+        <div className="space-y-6 animate-pop">
+          <div className="flex justify-between items-center">
+            <button onClick={onBack} className="flex items-center gap-2 text-sm font-semibold text-slate-600 dark:text-slate-300 hover:text-indigo-600">
+              <IconArrowLeft /> กลับหน้าแดชบอร์ด
+            </button>
+            <div className="flex gap-2">
+              <button onClick={() => onQuickStart('flashcard')} className="px-4 py-2 rounded-2xl bg-indigo-50 text-indigo-600 text-xs font-semibold hover:bg-indigo-100">
+                เริ่มทบทวนการ์ด
+              </button>
+              <button onClick={onAddWord} className="px-4 py-2 rounded-2xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold flex items-center gap-1.5 shadow-lg shadow-indigo-500/30">
+                <IconPlus /> เพิ่มคำศัพท์
+              </button>
+            </div>
+          </div>
+
+          <div className={`rounded-3xl p-6 border ${settings.darkMode ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-200'}`}>
+            <span className="px-3 py-1 rounded-full text-xs font-semibold bg-indigo-100 text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300">{set.category}</span>
+            <h1 className="text-2xl sm:text-3xl font-extrabold mt-2">{set.name}</h1>
+            <p className="text-xs text-slate-500 mt-1">{set.description}</p>
+          </div>
+
+          <input type="text" placeholder="ค้นหาคำศัพท์ในชุดนี้..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className={`w-full px-4 py-2.5 rounded-2xl border text-sm outline-none ${settings.darkMode ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-200'}`} />
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {filteredWords.map(word => (
+              <div key={word.id} className={`rounded-2xl p-4 border flex justify-between items-start ${settings.darkMode ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-200'}`}>
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2">
+                    <h4 className="font-bold text-lg text-indigo-600 dark:text-indigo-400">{word.word}</h4>
+                    <button onClick={() => speakText(word.word)} className="p-1 text-slate-400 hover:text-indigo-600"><IconVolume /></button>
+                  </div>
+                  <p className="font-medium text-sm text-slate-800 dark:text-slate-200">{word.meaning}</p>
+                  {word.pronunciation && <p className="text-xs text-indigo-400 font-mono">[{word.pronunciation}]</p>}
+                  {word.example && <p className="text-xs text-slate-500 italic">"{word.example}"</p>}
+                </div>
+                <div className="flex space-x-1">
+                  <button onClick={() => onEditWord(word)} className="p-1.5 text-slate-400 hover:text-indigo-600"><IconEdit /></button>
+                  <button onClick={() => onDeleteWord(word.id)} className="p-1.5 text-slate-400 hover:text-rose-600"><IconTrash /></button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      );
+    }
+
+    function FlashcardMode({ session, onFinish, onBack, settings }) {
+      const [currentIndex, setCurrentIndex] = useState(0);
+      const [isFlipped, setIsFlipped] = useState(false);
+      const currentWord = session.words[currentIndex] || session.words[0];
+
+      useEffect(() => { setIsFlipped(false); }, [currentIndex]);
+
+      useEffect(() => {
+        const handleKeyDown = (e) => {
+          if (e.code === 'Space') {
+            e.preventDefault();
+            setIsFlipped(p => !p);
+            playAudioFX('flip', settings.soundEnabled);
+          } else if (e.code === 'ArrowRight') handleNext();
+          else if (e.code === 'ArrowLeft') handlePrev();
+          else if (e.code === 'KeyS' && currentWord) speakText(currentWord.word);
+        };
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+      }, [currentIndex, currentWord]);
+
+      const handleNext = () => {
+        playAudioFX('click', settings.soundEnabled);
+        if (currentIndex < session.words.length - 1) setCurrentIndex(prev => prev + 1);
+        else onFinish({ ...session, correctCount: session.words.length, wrongCount: 0, score: session.words.length * 10 });
+      };
+
+      const handlePrev = () => {
+        playAudioFX('click', settings.soundEnabled);
+        if (currentIndex > 0) setCurrentIndex(prev => prev - 1);
+      };
+
+      if (!currentWord) return null;
+
+      return (
+        <div className="max-w-2xl mx-auto space-y-6 animate-pop">
+          <div className="flex justify-between items-center">
+            <button onClick={onBack} className="flex items-center gap-1.5 text-sm font-semibold text-slate-500 hover:text-indigo-600"><IconArrowLeft /> ออก</button>
+            <div className="text-xs font-bold text-slate-500">การ์ดที่ {currentIndex + 1} / {session.words.length}</div>
+          </div>
+
+          <div 
+            className="perspective-1000 w-full h-80 sm:h-96 cursor-pointer select-none"
+            onClick={() => { setIsFlipped(!isFlipped); playAudioFX('flip', settings.soundEnabled); }}
+          >
+            <div className={`relative w-full h-full duration-500 transform-style-3d transition-transform ${isFlipped ? 'rotate-y-180' : ''}`}>
+              
+              <div className={`absolute inset-0 backface-hidden rounded-3xl p-8 flex flex-col justify-between shadow-xl border-2 ${settings.darkMode ? 'bg-slate-800 border-slate-700 text-white' : 'bg-white border-indigo-100 text-slate-800'}`}>
+                <div className="flex justify-between text-xs text-slate-400 uppercase font-semibold">
+                  <span>English Word</span>
+                  <span className="text-indigo-500">แตะเพื่อพลิกดูคำแปล</span>
+                </div>
+                <div className="text-center my-auto space-y-4">
+                  <h2 className="text-3xl sm:text-5xl font-black text-indigo-600 dark:text-indigo-400">{currentWord.word}</h2>
+                  <button onClick={(e) => { e.stopPropagation(); speakText(currentWord.word); }} className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-indigo-50 text-indigo-600 dark:bg-indigo-950 dark:text-indigo-300 text-xs font-bold hover:scale-105 transition-transform">
+                    <IconVolume /> ฟังเสียงอ่าน
+                  </button>
+                </div>
+                <div className="text-center text-xs text-slate-400">กดปุ่ม <kbd className="px-1.5 py-0.5 border rounded">Spacebar</kbd> เพื่อพลิกการ์ด</div>
+              </div>
+
+              <div className="absolute inset-0 backface-hidden rotate-y-180 rounded-3xl p-8 flex flex-col justify-between shadow-xl bg-gradient-to-br from-indigo-600 via-violet-600 to-purple-700 text-white">
+                <div className="flex justify-between text-xs text-indigo-200 uppercase font-semibold">
+                  <span>คำแปลภาษาไทย</span>
+                  {currentWord.pronunciation && <span className="font-mono text-amber-300">[{currentWord.pronunciation}]</span>}
+                </div>
+                <div className="text-center my-auto space-y-3">
+                  <h2 className="text-2xl sm:text-4xl font-extrabold">{currentWord.meaning}</h2>
+                  {currentWord.example && <p className="bg-white/10 p-3 rounded-2xl text-xs sm:text-sm italic">"{currentWord.example}"</p>}
+                </div>
+                <div className="text-center text-xs text-indigo-200">แตะอีกครั้งเพื่อกลับด้านหน้า</div>
+              </div>
+
+            </div>
+          </div>
+
+          <div className="flex items-center justify-between gap-4">
+            <button onClick={handlePrev} disabled={currentIndex === 0} className="flex-1 py-3 rounded-2xl border font-semibold text-sm disabled:opacity-40 flex items-center justify-center gap-2">
+              <IconArrowLeft /> ย้อนกลับ
+            </button>
+            <button onClick={() => { setIsFlipped(!isFlipped); playAudioFX('flip', settings.soundEnabled); }} className="p-3 rounded-2xl bg-indigo-50 text-indigo-600"><IconRotateCw /></button>
+            <button onClick={handleNext} className="flex-1 py-3 rounded-2xl bg-indigo-600 text-white font-semibold text-sm shadow-lg flex items-center justify-center gap-2">
+              <span>{currentIndex === session.words.length - 1 ? 'เสร็จสิ้น' : 'ถัดไป'}</span> <IconArrowRight />
+            </button>
+          </div>
+        </div>
+      );
+    }
+
+    function MatchingMode({ session, onFinish, onBack, settings }) {
+      const [leftCards, setLeftCards] = useState([]);
+      const [rightCards, setRightCards] = useState([]);
+      const [selectedLeft, setSelectedLeft] = useState(null);
+      const [selectedRight, setSelectedRight] = useState(null);
+      const [matchedIds, setMatchedIds] = useState([]);
+      const [shakingIds, setShakingIds] = useState([]);
+      const [lives, setLives] = useState(session.lives);
+      const [score, setScore] = useState(0);
+      const [streak, setStreak] = useState(0);
+
+      useEffect(() => {
+        const sampleWords = session.words.slice(0, 8);
+        setLeftCards(sampleWords.map(w => ({ id: w.id, text: w.word, original: w })).sort(() => Math.random() - 0.5));
+        setRightCards(sampleWords.map(w => ({ id: w.id, text: w.meaning, original: w })).sort(() => Math.random() - 0.5));
+      }, [session.words]);
+
+      useEffect(() => {
+        if (selectedLeft && selectedRight) {
+          if (selectedLeft.id === selectedRight.id) {
+            playAudioFX('correct', settings.soundEnabled);
+            const newScore = score + 10 + (streak * 2);
+            setScore(newScore);
+            setStreak(s => s + 1);
+            setMatchedIds(prev => [...prev, selectedLeft.id]);
+            setSelectedLeft(null);
+            setSelectedRight(null);
+
+            if (matchedIds.length + 1 === leftCards.length) {
+              setTimeout(() => onFinish({ ...session, score: newScore, correctCount: leftCards.length, wrongCount: 0, bestStreak: streak + 1, missedWords: [] }), 600);
+            }
+          } else {
+            playAudioFX('wrong', settings.soundEnabled);
+            setShakingIds([selectedLeft.id, selectedRight.id]);
+            setStreak(0);
+            if (settings.livesEnabled) {
+              const newLives = lives - 1;
+              setLives(newLives);
+              if (newLives <= 0) setTimeout(() => onFinish({ ...session, score, correctCount: matchedIds.length, wrongCount: 1, bestStreak: streak, missedWords: [selectedLeft.original] }), 600);
+            }
+            setTimeout(() => { setSelectedLeft(null); setSelectedRight(null); setShakingIds([]); }, 500);
+          }
+        }
+      }, [selectedLeft, selectedRight]);
+
+      return (
+        <div className="max-w-3xl mx-auto space-y-6 animate-pop">
+          <div className="flex justify-between items-center bg-white dark:bg-slate-800 p-4 rounded-3xl border shadow-sm">
+            <button onClick={onBack} className="flex items-center gap-1 text-xs font-semibold text-slate-500"><IconArrowLeft /> ออก</button>
+            {settings.livesEnabled && (
+              <div className="flex items-center gap-1">
+                {[1, 2, 3].map(i => <IconHeart key={i} className={`w-5 h-5 ${i <= lives ? 'text-rose-500' : 'text-slate-300'}`} />)}
+              </div>
+            )}
+            <div className="text-xs font-bold text-indigo-600 dark:text-indigo-400">คะแนน: {score}</div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-3">
+              <h4 className="text-xs font-bold uppercase text-slate-400 text-center">คำศัพท์ภาษาอังกฤษ</h4>
+              {leftCards.map(card => {
+                const isMatched = matchedIds.includes(card.id);
+                const isSelected = selectedLeft && selectedLeft.id === card.id;
+                const isShaking = shakingIds.includes(card.id);
+                if (isMatched) return <div key={card.id} className="p-4 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 font-bold text-center opacity-60">✓ จับคู่แล้ว</div>;
+                return (
+                  <button key={card.id} onClick={() => { playAudioFX('click', settings.soundEnabled); setSelectedLeft(card); }} className={`w-full p-4 rounded-2xl border text-sm font-bold transition-all ${isShaking ? 'animate-shake bg-rose-100 text-rose-700' : isSelected ? 'bg-indigo-600 text-white' : settings.darkMode ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-200'}`}>
+                    {card.text}
+                  </button>
+                );
+              })}
+            </div>
+
+            <div className="space-y-3">
+              <h4 className="text-xs font-bold uppercase text-slate-400 text-center">คำแปลภาษาไทย</h4>
+              {rightCards.map(card => {
+                const isMatched = matchedIds.includes(card.id);
+                const isSelected = selectedRight && selectedRight.id === card.id;
+                const isShaking = shakingIds.includes(card.id);
+                if (isMatched) return <div key={card.id} className="p-4 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 font-bold text-center opacity-60">✓ จับคู่แล้ว</div>;
+                return (
+                  <button key={card.id} onClick={() => { playAudioFX('click', settings.soundEnabled); setSelectedRight(card); }} className={`w-full p-4 rounded-2xl border text-sm font-bold transition-all ${isShaking ? 'animate-shake bg-rose-100 text-rose-700' : isSelected ? 'bg-indigo-600 text-white' : settings.darkMode ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-200'}`}>
+                    {card.text}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    function QuizMode({ session, onFinish, onBack, settings }) {
+      const [currentIndex, setCurrentIndex] = useState(0);
+      const [options, setOptions] = useState([]);
+      const [selectedOption, setSelectedOption] = useState(null);
+      const [isAnswered, setIsAnswered] = useState(false);
+      const [timeLeft, setTimeLeft] = useState(settings.timerDuration);
+      const [lives, setLives] = useState(session.lives);
+      const [score, setScore] = useState(0);
+      const [streak, setStreak] = useState(0);
+      const [bestStreak, setBestStreak] = useState(0);
+      const [missedWords, setMissedWords] = useState([]);
+      const [correctCount, setCorrectCount] = useState(0);
+      const [wrongCount, setWrongCount] = useState(0);
+
+      const currentWord = session.words[currentIndex];
+
+      useEffect(() => {
+        if (!currentWord) return;
+        const correctMeaning = currentWord.meaning;
+        let allMeanings = session.words.map(w => w.meaning).filter(m => m !== correctMeaning);
+        if (allMeanings.length < 3) allMeanings = [...allMeanings, 'ความสัมพันธ์', 'นวัตกรรมล้ำสมัย', 'การประเมินผล'];
+        const shuffledDistractors = [...allMeanings].sort(() => Math.random() - 0.5).slice(0, 3);
+        setOptions([correctMeaning, ...shuffledDistractors].sort(() => Math.random() - 0.5));
+        setSelectedOption(null);
+        setIsAnswered(false);
+        setTimeLeft(settings.timerDuration);
+      }, [currentIndex, currentWord]);
+
+      useEffect(() => {
+        if (isAnswered) return;
+        if (timeLeft <= 0) { handleTimeout(); return; }
+        const timer = setInterval(() => setTimeLeft(prev => prev - 0.1), 100);
+        return () => clearInterval(timer);
+      }, [timeLeft, isAnswered]);
+
+      const handleTimeout = () => {
+        playAudioFX('timeout', settings.soundEnabled);
+        setIsAnswered(true);
+        setWrongCount(p => p + 1);
+        setStreak(0);
+        setMissedWords(prev => [...prev, currentWord]);
+        if (settings.livesEnabled) {
+          const newLives = lives - 1;
+          setLives(newLives);
+          if (newLives <= 0) {
+            setTimeout(() => finishGame(score, correctCount, wrongCount + 1, streak, bestStreak, [...missedWords, currentWord]), 1000);
+            return;
+          }
+        }
+        if (settings.autoNext) setTimeout(() => proceedNext(), 1200);
+      };
+
+      const handleSelectOption = (opt) => {
+        if (isAnswered) return;
+        setSelectedOption(opt);
+        setIsAnswered(true);
+        const isCorrect = opt === currentWord.meaning;
+
+        if (isCorrect) {
+          playAudioFX('correct', settings.soundEnabled);
+          const roundScore = 10 + Math.round(timeLeft * 2) + (streak * 5);
+          const newScore = score + roundScore;
+          const newStreak = streak + 1;
+          setScore(newScore);
+          setCorrectCount(p => p + 1);
+          setStreak(newStreak);
+          setBestStreak(Math.max(bestStreak, newStreak));
+        } else {
+          playAudioFX('wrong', settings.soundEnabled);
+          setWrongCount(p => p + 1);
+          setStreak(0);
+          setMissedWords(prev => [...prev, currentWord]);
+          if (settings.livesEnabled) {
+            const newLives = lives - 1;
+            setLives(newLives);
+            if (newLives <= 0) {
+              setTimeout(() => finishGame(score, correctCount, wrongCount + 1, streak, bestStreak, [...missedWords, currentWord]), 1200);
+              return;
+            }
+          }
+        }
+        if (settings.autoNext) setTimeout(() => proceedNext(), 1200);
+      };
+
+      const proceedNext = () => {
+        if (currentIndex < session.words.length - 1) setCurrentIndex(p => p + 1);
+        else finishGame(score, correctCount, wrongCount, streak, bestStreak, missedWords);
+      };
+
+      const finishGame = (fScore, fCorrect, fWrong, fStreak, fBestStreak, fMissed) => {
+        onFinish({ ...session, score: fScore, correctCount: fCorrect, wrongCount: fWrong, bestStreak: fBestStreak, missedWords: fMissed });
+      };
+
+      if (!currentWord) return null;
+      const timerPct = Math.max(0, (timeLeft / settings.timerDuration) * 100);
+
+      return (
+        <div className="max-w-2xl mx-auto space-y-6 animate-pop">
+          <div className="flex justify-between items-center bg-white dark:bg-slate-800 p-4 rounded-3xl border shadow-sm">
+            <button onClick={onBack} className="flex items-center gap-1 text-xs font-semibold text-slate-500"><IconArrowLeft /> ออก</button>
+            <div className="text-xs font-bold text-slate-500">ข้อที่ {currentIndex + 1} / {session.words.length}</div>
+            {settings.livesEnabled && (
+              <div className="flex items-center gap-1">
+                {[1, 2, 3].map(i => <IconHeart key={i} className={`w-4 h-4 ${i <= lives ? 'text-rose-500' : 'text-slate-300'}`} />)}
+              </div>
+            )}
+            <div className="text-xs font-extrabold text-indigo-600 dark:text-indigo-400">คะแนน: {score}</div>
+          </div>
+
+          <div className="space-y-1">
+            <div className="w-full h-2.5 rounded-full bg-slate-200 dark:bg-slate-800 overflow-hidden">
+              <div className="h-full bg-amber-500 transition-all duration-100" style={{ width: `${timerPct}%` }} />
+            </div>
+          </div>
+
+          <div className={`rounded-3xl p-8 border text-center space-y-4 ${settings.darkMode ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-200'}`}>
+            <h2 className="text-3xl sm:text-5xl font-black text-indigo-600 dark:text-indigo-400">{currentWord.word}</h2>
+            {currentWord.pronunciation && <p className="text-xs font-mono text-slate-400">[{currentWord.pronunciation}]</p>}
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {options.map((opt, idx) => {
+              let btnStyle = settings.darkMode ? 'bg-slate-800 border-slate-700 text-white' : 'bg-white border-slate-200 text-slate-800';
+              if (isAnswered) {
+                if (opt === currentWord.meaning) btnStyle = 'bg-emerald-500 text-white border-emerald-500';
+                else if (opt === selectedOption) btnStyle = 'bg-rose-500 text-white border-rose-500 animate-shake';
+                else btnStyle = 'opacity-40 bg-slate-100 dark:bg-slate-900 border-transparent';
+              }
+
+              return (
+                <button key={idx} onClick={() => handleSelectOption(opt)} disabled={isAnswered} className={`p-4 rounded-2xl border text-sm sm:text-base font-bold transition-all text-left flex justify-between items-center ${btnStyle}`}>
+                  <span>{opt}</span>
+                  {isAnswered && opt === currentWord.meaning && <IconCheckCircle className="text-white" />}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      );
+    }
+
+    function ResultsView({ session, onPlayAgain, onPracticeMistakes, onHome, onViewStats, settings }) {
+      const [showMistakes, setShowMistakes] = useState(false);
+      const totalQuestions = session.correctCount + session.wrongCount;
+      const accuracy = totalQuestions > 0 ? Math.round((session.correctCount / totalQuestions) * 100) : 100;
+
+      return (
+        <div className="max-w-xl mx-auto space-y-6 text-center animate-pop">
+          <div className={`rounded-3xl p-8 border shadow-2xl ${settings.darkMode ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-200'}`}>
+            <div className="w-16 h-16 rounded-full bg-amber-400 text-white mx-auto flex items-center justify-center text-3xl mb-3 shadow-lg">🏆</div>
+            <h1 className="text-3xl font-black">{accuracy >= 80 ? '🎉 ยอดเยี่ยมมาก!' : '💪 ทำได้ดี พยายามต่อไป!'}</h1>
+            <p className="text-xs text-slate-400 mt-1">สรุปผลการเล่นชุด "{session.setName}"</p>
+
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-6 pt-6 border-t border-slate-100 dark:border-slate-700">
+              <div className="bg-slate-50 dark:bg-slate-900 p-3 rounded-2xl"><span className="text-xs text-slate-400 block">คะแนน</span><span className="text-xl font-black text-indigo-600">{session.score}</span></div>
+              <div className="bg-slate-50 dark:bg-slate-900 p-3 rounded-2xl"><span className="text-xs text-slate-400 block">ความแม่นยำ</span><span className="text-xl font-black text-emerald-500">{accuracy}%</span></div>
+              <div className="bg-slate-50 dark:bg-slate-900 p-3 rounded-2xl"><span className="text-xs text-slate-400 block">ตอบถูก</span><span className="text-xl font-black text-emerald-600">✓ {session.correctCount}</span></div>
+              <div className="bg-slate-50 dark:bg-slate-900 p-3 rounded-2xl"><span className="text-xs text-slate-400 block">ตอบผิด</span><span className="text-xl font-black text-rose-500">✗ {session.wrongCount}</span></div>
+            </div>
+          </div>
+
+          <div className="space-y-3">
+            {session.missedWords.length > 0 && (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <button onClick={() => setShowMistakes(!showMistakes)} className="py-3 rounded-2xl border border-rose-200 bg-rose-50 dark:bg-rose-950/40 text-rose-600 font-semibold text-xs flex items-center justify-center gap-2">
+                  <IconAlertTriangle /> ดูคำศัพท์ที่ตอบผิด ({session.missedWords.length})
+                </button>
+                <button onClick={onPracticeMistakes} className="py-3 rounded-2xl bg-rose-600 hover:bg-rose-700 text-white font-semibold text-xs shadow-lg shadow-rose-500/30 flex items-center justify-center gap-2">
+                  <IconRefreshCw /> ฝึกเฉพาะคำที่ผิดเท่านั้น
+                </button>
+              </div>
+            )}
+
+            {showMistakes && session.missedWords.length > 0 && (
+              <div className="p-4 rounded-3xl border bg-rose-50/50 dark:bg-rose-950/20 text-left space-y-2">
+                <h4 className="font-bold text-sm text-rose-600">ทบทวนคำศัพท์ที่ตอบผิด:</h4>
+                <div className="space-y-2 max-h-60 overflow-y-auto">
+                  {session.missedWords.map(w => (
+                    <div key={w.id} className="p-3 bg-white dark:bg-slate-800 rounded-2xl border text-xs flex justify-between items-center">
+                      <div>
+                        <span className="font-bold text-indigo-600 dark:text-indigo-400">{w.word}</span> = {w.meaning}
+                      </div>
+                      <button onClick={() => speakText(w.word)} className="text-slate-400 hover:text-indigo-600"><IconVolume /></button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <div className="grid grid-cols-2 gap-3">
+              <button onClick={onPlayAgain} className="py-3 rounded-2xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-sm shadow-lg shadow-indigo-500/30">เล่นอีกครั้ง</button>
+              <button onClick={onHome} className="py-3 rounded-2xl border font-semibold text-sm hover:bg-slate-100 dark:hover:bg-slate-800">กลับหน้าหลัก</button>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    function StatsDashboardView({ userStats, sets, settings }) {
+      const allWords = useMemo(() => sets.flatMap(s => s.words || []), [sets]);
+      const masteryBreakdown = useMemo(() => {
+        let learned = 0, reviewing = 0, needsWork = 0;
+        allWords.forEach(word => {
+          const stat = userStats.wordMastery[word.id];
+          if (!stat) needsWork++;
+          else if (stat.correctCount >= 3 && stat.correctCount > stat.wrongCount) learned++;
+          else if (stat.correctCount > 0) reviewing++;
+          else needsWork++;
+        });
+        return { learned, reviewing, needsWork };
+      }, [allWords, userStats.wordMastery]);
+
+      return (
+        <div className="space-y-8 animate-pop">
+          <h1 className="text-2xl sm:text-3xl font-extrabold">สถิติการเรียนรู้ของคุณ (Statistics)</h1>
+
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className={`p-5 rounded-3xl border ${settings.darkMode ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-200'}`}>
+              <span className="text-xs text-slate-400 block font-semibold">จำนวนเกมที่เล่น</span>
+              <span className="text-3xl font-black">{userStats.totalGames} ครั้ง</span>
+            </div>
+            <div className={`p-5 rounded-3xl border ${settings.darkMode ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-200'}`}>
+              <span className="text-xs text-slate-400 block font-semibold">คำถามที่ตอบแล้ว</span>
+              <span className="text-3xl font-black">{userStats.totalQuestions} ข้อ</span>
+            </div>
+            <div className={`p-5 rounded-3xl border ${settings.darkMode ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-200'}`}>
+              <span className="text-xs text-slate-400 block font-semibold">Streak สูงสุด</span>
+              <span className="text-3xl font-black text-amber-500">🔥 {userStats.bestStreak}</span>
+            </div>
+            <div className={`p-5 rounded-3xl border ${settings.darkMode ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-200'}`}>
+              <span className="text-xs text-slate-400 block font-semibold">ความแม่นยำรวม</span>
+              <span className="text-3xl font-black text-indigo-600 dark:text-indigo-400">{userStats.totalQuestions > 0 ? Math.round((userStats.totalCorrect / userStats.totalQuestions) * 100) : 0}%</span>
+            </div>
+          </div>
+
+          <div className={`p-6 rounded-3xl border ${settings.darkMode ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-200'}`}>
+            <h3 className="font-bold text-lg mb-4">ระดับการจดจำคำศัพท์ (Word Mastery Tiers)</h3>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div className="p-4 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-300 dark:border-emerald-800">
+                <span className="text-xs font-bold text-emerald-700 dark:text-emerald-400 uppercase">🟢 จำได้ดีเยี่ยม</span>
+                <span className="text-2xl font-black text-emerald-600 block">{masteryBreakdown.learned} คำ</span>
+              </div>
+              <div className="p-4 rounded-2xl bg-amber-50 dark:bg-amber-950/40 border border-amber-300 dark:border-amber-800">
+                <span className="text-xs font-bold text-amber-700 dark:text-amber-400 uppercase">🟡 อยู่ระหว่างทบทวน</span>
+                <span className="text-2xl font-black text-amber-600 block">{masteryBreakdown.reviewing} คำ</span>
+              </div>
+              <div className="p-4 rounded-2xl bg-rose-50 dark:bg-rose-950/40 border border-rose-300 dark:border-rose-800">
+                <span className="text-xs font-bold text-rose-700 dark:text-rose-400 uppercase">🔴 ต้องฝึกเพิ่มเติม</span>
+                <span className="text-2xl font-black text-rose-600 block">{masteryBreakdown.needsWork} คำ</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    function AchievementsView({ achievements, settings }) {
+      return (
+        <div className="space-y-6 animate-pop">
+          <h1 className="text-2xl sm:text-3xl font-extrabold">ความสำเร็จและเหรียญรางวัล (Badges)</h1>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {achievements.map(ach => (
+              <div key={ach.id} className={`p-5 rounded-3xl border flex items-start gap-4 ${ach.unlocked ? settings.darkMode ? 'bg-slate-800 border-amber-500/50' : 'bg-white border-amber-300 shadow-sm' : 'opacity-60 bg-slate-100 dark:bg-slate-900'}`}>
+                <div className="w-12 h-12 rounded-2xl bg-amber-400 text-white flex items-center justify-center text-xl flex-shrink-0 shadow-md">{ach.icon}</div>
+                <div className="space-y-1 flex-1">
+                  <div className="flex justify-between items-center">
+                    <h4 className="font-bold text-base">{ach.title}</h4>
+                    {ach.unlocked && <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-800">ปลดล็อกแล้ว</span>}
+                  </div>
+                  <p className="text-xs text-slate-500">{ach.desc}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      );
+    }
+
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<App />);
+  </script>
+</body>
+</html>
